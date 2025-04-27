@@ -1,0 +1,108 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Colombo Air Quality Monitoring - Leaflet Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        #map {
+            height: 90vh;
+            width: 100%;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .chart-container {
+            width: 400px;
+            height: 300px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Colombo Air Quality Monitoring Dashboard (OpenStreetMap)</h1>
+    <div id="map"></div>
+
+    <script>
+        let map = L.map('map').setView([6.9271, 79.8612], 12); // Colombo coordinates
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        function getAQIColor(aqi) {
+            if (aqi <= 50) return "green";
+            else if (aqi <= 100) return "yellow";
+            else if (aqi <= 150) return "orange";
+            else return "red";
+        }
+
+        async function fetchSensors() {
+            const response = await fetch('https://localhost:7141/api/public/sensors');
+            return await response.json();
+        }
+
+        async function fetchLatestAQI(sensorId) {
+            const response = await fetch(`https://localhost:7141/api/public/aqi/${sensorId}`);
+            return await response.json();
+        }
+
+        async function fetchAQIHistory(sensorId) {
+            const response = await fetch(`https://localhost:7141/api/public/aqi/history/${sensorId}`);
+            return await response.json();
+        }
+
+        async function initSensors() {
+            const sensors = await fetchSensors();
+
+            sensors.forEach(async (sensor) => {
+                const aqiData = await fetchLatestAQI(sensor.id);
+                const color = getAQIColor(aqiData.aqiValue);
+
+                const marker = L.circleMarker([sensor.latitude, sensor.longitude], {
+                    color: 'white',
+                    fillColor: color,
+                    fillOpacity: 1,
+                    radius: 10
+                }).addTo(map);
+
+                marker.bindPopup(`<b>${sensor.sensorName}</b><br>AQI: ${aqiData.aqiValue}<br><canvas id="chart-${sensor.id}" width="400" height="300"></canvas>`);
+
+                marker.on('click', async function () {
+                    const history = await fetchAQIHistory(sensor.id);
+                    let labels = history.map(x => new Date(x.timestamp).toLocaleTimeString());
+                    let data = history.map(x => x.aqiValue);
+
+                    setTimeout(() => {
+                        const ctx = document.getElementById(`chart-${sensor.id}`).getContext('2d');
+                        new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: labels.reverse(),
+                                datasets: [{
+                                    label: 'AQI Trend',
+                                    data: data.reverse(),
+                                    borderColor: color,
+                                    fill: false
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                            }
+                        });
+                    }, 200);
+                });
+            });
+        }
+
+        window.onload = initSensors;
+    </script>
+
+</body>
+</html>
