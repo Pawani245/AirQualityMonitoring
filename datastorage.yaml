@@ -1,0 +1,50 @@
+
+---
+
+## 🛠️ Technologies Used
+
+- **Hardware**: ESP8266/NodeMCU, PM / CO₂ sensors  
+- **Firmware**: Arduino IDE (C++)  
+- **Backend**: Flask / Express.js (HTTP/MQTT)  
+- **Frontend**: React or HTML + Chart.js/d3.js  
+- **Storage**: SQLite, JSON, or CSV logs  
+- **Optional**: Email alerts, JWT-based auth, Docker deployment
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Arduino IDE or PlatformIO  
+- NodeMCU (ESP8266) board + air sensor(s)  
+- PC with Python 3.x or Node.js
+
+---
+
+### 🧰 Hardware Setup
+
+1. Wire your sensor(s) to ESP8266 based on their datasheet (e.g., PM2.5 → `D2`, CO₂ → `A0`).  
+2. Connect power (3.3 V / GND).  
+3. Adjust pin configurations in `src/firmware/config.h`.
+
+---
+
+### 🔌 Firmware Flashing
+
+1. Open `firmware/` in IDE.  
+2. Update `WIFI_SSID`, `WIFI_PASSWORD`, and server URL in code.  
+3. Select board **NodeMCU 1.0 (ESP‑12E)** and COM port.  
+4. Upload firmware to board.
+
+---
+
+### 🌐 Web Interface Setup
+
+**Using Flask backend**:
+```bash
+cd backend/
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+FLASK_APP=app.py flask run
